@@ -917,8 +917,11 @@ struct SideBar: View {
                               keeps: Bool) -> ([PreviewLine], [PreviewTint]) {
         let front = row.splits.first { pair in row.active.map(pair.tabs.contains) ?? false }?.left ?? row.active
         let heading = icons ? GroupHeading.compactHeight : GroupHeading.height
+        // A split is a line for each page, or one line with its pages side
+        // by side (Preferences.splitsInOneLine; see SplitTabItem).
+        let oneLine = prefs.splitsInOneLine
         let lines: (Tab) -> CGFloat = { tab in
-            CGFloat(self.prefs.splitView ? (row.splits.first { $0.left == tab.id }?.tabs.count ?? 1) : 1)
+            CGFloat(self.prefs.splitView && !oneLine ? (row.splits.first { $0.left == tab.id }?.tabs.count ?? 1) : 1)
         }
         var out: [PreviewLine] = []
         var tints: [PreviewTint] = []
@@ -1037,8 +1040,9 @@ struct SideBar: View {
             ? displayed.filter { $0.pin == nil && browser.group(of: $0) == nil } + grouped.flatMap { $0 }
             : displayed.filter { $0.pin == nil }
         // A split is a line for each page (see SplitTabItem): the lines
-        // past the first.
-        let pairs = rows.reduce(0) { $0 + max(0, (browser.split(for: $1)?.tabs.count ?? 1) - 1) }
+        // past the first. One line, side by side, has none.
+        let pairs = prefs.splitsInOneLine ? 0
+            : rows.reduce(0) { $0 + max(0, (browser.split(for: $1)?.tabs.count ?? 1) - 1) }
         let heading = icons ? GroupHeading.compactHeight : GroupHeading.height
         // A folded group showing none of its tabs still has its empty stack
         // of them under its heading, and the gap after it.
@@ -1100,9 +1104,10 @@ struct SideBar: View {
     }
 
     /// Each row's place down the column, the gap under it included: a pair
-    /// stands as two lines (see Carried). Worked out once for the list.
+    /// stands as two lines (see Carried), or one with its pages side by
+    /// side (Preferences.splitsInOneLine). Worked out once for the list.
     private func steps(_ rows: [Tab]) -> [CGFloat] {
-        let pairs = prefs.splitView
+        let pairs = prefs.splitView && !prefs.splitsInOneLine
             ? Dictionary(browser.splits.filter { $0.left != $0.right }.map { ($0.left, $0.tabs.count) }, uniquingKeysWith: { first, _ in first })
             : [:]
         return rows.map { rowHeight * CGFloat(pairs[$0.id] ?? 1) + SideBar.gap }
@@ -1237,7 +1242,9 @@ struct SideBar: View {
         let lineSteps = lines.map { line -> CGFloat in
             switch line {
             case .folder: return heading + SideBar.gap
-            case .pin(let tab, _): return rowHeight * CGFloat(browser.split(for: tab)?.tabs.count ?? 1) + SideBar.gap
+            case .pin(let tab, _):
+                let lines = prefs.splitsInOneLine ? 1 : browser.split(for: tab)?.tabs.count ?? 1
+                return rowHeight * CGFloat(lines) + SideBar.gap
             case .item: return rowHeight + SideBar.gap
             }
         }
@@ -1855,7 +1862,10 @@ struct SideBar: View {
             guard !loose.isEmpty else { return .loose(0) }
             let top = frames.rows.minY + columnPlan().looseTop
             let ghost: (Int, CGFloat)? = if case .loose(let at)? = crossing?.target { (at, rowHeight) } else { nil }
-            let heights = loose.map { browser.split(for: $0) != nil ? rowHeight * 2 : rowHeight }
+            // A pair is two lines, or one with its pages side by side
+            // (Preferences.splitsInOneLine; see SplitTabItem).
+            let oneLine = prefs.splitsInOneLine
+            let heights = loose.map { !oneLine && browser.split(for: $0) != nil ? rowHeight * 2 : rowHeight }
             return .loose(PinDrop.rowSlot(y: point.y - top, heights: heights, gap: SideBar.gap, ghost: ghost))
         }
     }
@@ -2600,11 +2610,8 @@ private struct SideRow: View, Equatable {
             Bench.rowAppeared(now, hover: hover)
         }
         .contextMenu { if interactive { TabMenu(browser: browser, tab: tab, close: close) } }
-        .background {
-            if interactive && prefs.splitView {
-                SplitDropZone(browser: browser, tab: tab, kind: .strip)
-            }
-        }
+        .modifier(SplitDropMarks(browser: browser, tab: tab, on: interactive && prefs.splitView,
+                                 hint: tab.pin == nil && prefs.dropsOntoTabs))
         .animation(nil, value: hovering)
         .animation(Motion.glide, value: editing)
         .animation(Motion.quick, value: dim)

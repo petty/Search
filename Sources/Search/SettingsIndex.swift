@@ -731,7 +731,7 @@ enum SettingsIndex {
               more: "Escape puts it away; the other button keeps it as a tab.",
               keys: ["links.peek", "links.peekClick"], words: ["preview", "shift click", "peek"]),
         .init(id: "peek.split", group: "mouse", icon: "rectangle.split.2x1",
-              title: "Peek and Split View", detail: "Peek stays with its tab, ⌥-click splits, controls over a split page",
+              title: "Peek and Split View", detail: "Peek stays with its tab, ⌥-click splits, split controls, a tab dropped on a tab",
               kind: .wide, advanced: true),
         .init(id: "links.peek.stays", group: "mouse", icon: "eye.slash",
               title: "Peek stays with its tab", detail: "Another tab hides it, with its video and sound paused, and coming back shows it",
@@ -744,6 +744,14 @@ enum SettingsIndex {
               title: "Controls over a page in Split View", detail: "Under the pointer: move it left or right, take it out of the split, or close it",
               more: "The same as the divider's right-click menu and the Tabs menu, closer to hand.",
               keys: ["split.controls"], words: ["split", "side by side", "move page", "swap", "close page", "separate", "buttons", "controls"], advanced: true, within: "peek.split"),
+        .init(id: "tabs.dropOnto", group: "mouse", icon: "rectangle.split.2x1",
+              title: "Drop a tab onto another to split them", detail: "Held over the middle of a tab in the column, letting go puts the two in Split View",
+              more: "The half the pointer is on is the half the carried tab takes. Off, a tab carried down the column only moves to a new place.",
+              keys: ["tabs.dropOnto"], words: ["drag", "drop", "split", "side by side", "merge", "combine", "column", "sidebar"], advanced: true, within: "peek.split"),
+        .init(id: "tabs.splitRow", group: "mouse", icon: "rectangle.split.2x1.fill",
+              title: "Splits side by side in the column", detail: "A split is one line, its pages each half of it, rather than a line for each",
+              keys: ["tabs.splitRow"], words: ["split", "side by side", "half", "50/50", "one line", "column", "sidebar"],
+              parent: "tabs.dropOnto", advanced: true, within: "peek.split"),
         .init(id: "mouse.habits", group: "mouse", icon: "computermouse",
               title: "Mouse and key habits", detail: "Backspace goes back, middle-button scrolling, a smooth wheel",
               kind: .wide, advanced: true),
@@ -986,6 +994,8 @@ enum SettingsIndex {
         case "newtab.recent", "newtab.arc": return prefs.floatingNewTab
         case "mail.default": return prefs.webmail != .none
         case "links.peek.stays": return prefs.peeksLinks || prefs.pinsPeek
+        case "tabs.dropOnto": return prefs.sidebar
+        case "tabs.splitRow": return prefs.sidebar && prefs.splitsOnDrop
         case "launcher.key": return prefs.launcher
         case "pages.capture.copyOnly": return prefs.capturesPages
         case "icloud.erase": return ICloudSync.shared.on
@@ -1016,6 +1026,7 @@ enum SettingsIndex {
         case "newtab.recent", "newtab.arc": return "Only with the new tab in a floating field"
         case "mail.default": return "Only with a webmail chosen for email links"
         case "links.peek.stays": return "Only when links or pins open peeks"
+        case "tabs.splitRow": return "Only with Drop a tab onto another to split them on"
         case "launcher.key": return "Only with the address field from any app on"
         case "bookmarks.side": return "Only with the bookmarks bar shown and the tabs down a side"
         case "pins.folderPeek": return "Only with Pinned rows on"

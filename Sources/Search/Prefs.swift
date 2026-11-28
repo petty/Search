@@ -1322,6 +1322,23 @@ final class Preferences: ObservableObject {
     /// adds a command, so there is no switch. Still a property, for the
     /// code that asks and the tests that turn it off; never written.
     @Published var splitView = true
+    /// A tab carried down the column and held over the middle of another
+    /// tab pairs the two in Split View when let go (see TabMerge). It changes
+    /// how a carried tab passes the others (Carried.slot(pointer:)), so off
+    /// unless asked for (PR 1497 review, Drice).
+    @Published var splitsOnDrop: Bool {
+        didSet { store.set(splitsOnDrop, forKey: "tabs.dropOnto") }
+    }
+    /// A split in the column as one line, its pages side by side, rather
+    /// than a line for each page. Only with splitsOnDrop on, and off unless
+    /// asked for as well: it changes how every split in the column looks.
+    @Published var splitsSideBySide: Bool {
+        didSet { store.set(splitsSideBySide, forKey: "tabs.splitRow") }
+    }
+    /// What the column goes by: a tab dropped onto a tab splits them.
+    var dropsOntoTabs: Bool { splitView && splitsOnDrop }
+    /// What the column goes by: a split is one line, side by side.
+    var splitsInOneLine: Bool { dropsOntoTabs && splitsSideBySide }
     /// ⌃W, ⌃R, ⌃M and ⌃O on the ⌃Tab switcher's card picked, with the keys
     /// listed under the tabs (see TabSwitcher.Action).
     /// Always on since the Settings rework (Drice, 24 Oct 2026): it only
@@ -1655,6 +1672,8 @@ final class Preferences: ObservableObject {
         peekClick = store.string(forKey: "links.peekClick").flatMap(PeekClick.init(rawValue:)) ?? .shift
         peekStays = store.bool(forKey: "links.peek.stays")
         optionClickSplits = store.bool(forKey: "links.optionSplit")
+        splitsOnDrop = store.bool(forKey: "tabs.dropOnto")
+        splitsSideBySide = store.bool(forKey: "tabs.splitRow")
         splitControls = store.bool(forKey: "split.controls")
         backspaceGoesBack = store.bool(forKey: Preferences.backspaceKey)
         pinsPeek = keepsSite

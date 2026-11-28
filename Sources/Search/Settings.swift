@@ -1161,6 +1161,8 @@ struct SettingsPanel: View {
         case "links.peek.stays": Switch(on: $prefs.peekStays)
         case "links.optionSplit": Switch(on: $prefs.optionClickSplits)
         case "split.controls": Switch(on: $prefs.splitControls)
+        case "tabs.dropOnto": Switch(on: $prefs.splitsOnDrop)
+        case "tabs.splitRow": Switch(on: $prefs.splitsSideBySide)
         case "keys.backspaceBack": Switch(on: $prefs.backspaceGoesBack)
         case "autoscroll": Switch(on: $prefs.autoScroll)
         case "wheel.smooth": Switch(on: $prefs.wheelGlides)
